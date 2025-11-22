@@ -28,7 +28,3 @@ user@os:~/ ./build/life <map_width> <map_height> <gen_per_sec>
 The order matters, but if one the parameters is missing, the missing ones will be defaulted.
 
 **Since it's not complete, some weird behavior must be expected.**
-
-## License
-
-Public domain
