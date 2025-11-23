@@ -2,7 +2,10 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#define PIXEL_SCALE 5
+
 static uint8_t err = 0x0;
+static uint8_t lv_loaded_flag = 0x0;
 
 struct SDL_vars *init_sdl() {
   if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
@@ -94,6 +97,7 @@ int main(int argc, char **argv) {
   lv->cells_cache = malloc(sizeof(uint8_t) * WORLD_W * WORLD_H);
 
   generate_map(lv);
+  lv_loaded_flag = 0x1;
 
   // SDL_FillRect(surface, NULL, SDL_MapRGB(surface->format, 255, 90, 120));
   fprintf(stdout, "[runn] Ready, press q to exit\n");
@@ -123,7 +127,12 @@ int main(int argc, char **argv) {
       }
         //
       case SDL_MOUSEBUTTONDOWN: {
-      }
+        fprintf(stdout, "[evnt] mouse_click: x: %d y:%d, cell(%d,%d)\n",
+                event.button.x, event.button.y, event.button.x / PIXEL_SCALE,
+                event.button.y / PIXEL_SCALE);
+        lv->cells[event.button.x + event.button.y * WORLD_W] ^= 0x1;
+        lv->cells_cache[event.button.x + event.button.y * WORLD_W] ^= 0x1;
+      } break;
 
       case SDL_QUIT: {
         close_flag |= 0x1;
@@ -136,23 +145,43 @@ int main(int argc, char **argv) {
     if (start_life_flag) {
 
       int row = 0;
-      int pixel_scale = 5;
       for (int i = 0; i < WORLD_W * WORLD_H; ++i) {
 
-        // TODO: add logic rules for life/death of cells
-        // TODO: check array logic for borders (avoid reading out to check
-        // neighbors) lv->cells[i + WORLD_W + 1] =
+        // first row ignored for cells update
+        if (i > WORLD_W && i < WORLD_H * (WORLD_W - 1)) {
+          // if current cell not a border one
+          if (((row * WORLD_W) + i) % WORLD_W >= 1 ||
+              ((row * WORLD_W) + i) % WORLD_W <= WORLD_W) {
 
-        SDL_Rect r = {(i % WORLD_W) * pixel_scale, row * pixel_scale,
-                      pixel_scale, pixel_scale};
-        uint32_t color = 0x000000;
+            uint8_t nw = lv->cells_cache[i - WORLD_W - 1];
+            uint8_t n = lv->cells_cache[i - WORLD_W];
+            uint8_t ne = lv->cells_cache[i - WORLD_W + 1];
+            uint8_t e = lv->cells_cache[i + 1];
+            uint8_t se = lv->cells_cache[i + WORLD_W + 1];
+            uint8_t s = lv->cells_cache[i + WORLD_W];
+            uint8_t sw = lv->cells_cache[i + WORLD_W - 1];
+            uint8_t w = lv->cells_cache[i - 1];
+
+            int neighbors = nw + n + ne + e + se + s + sw + w;
+            if (lv->cells_cache[i]) {
+              lv->cells[i] = neighbors == 3 || neighbors == 2 ? 0x1 : 0x0;
+            } else {
+              lv->cells[i] = neighbors == 3 ? 0x1 : 0x0;
+            }
+          }
+        }
+
+        SDL_Rect r = {(i % WORLD_W) * PIXEL_SCALE, row * PIXEL_SCALE,
+                      PIXEL_SCALE, PIXEL_SCALE};
+        uint32_t color = 0xffffff;
         if (lv->cells[i]) {
-          color = 0xffffff;
+          color = 0x000000;
         }
         SDL_FillRect(sdl->surface, &r, color);
         if (i % WORLD_W == 0)
           ++row;
       }
+      memcpy(lv->cells_cache, lv->cells, WORLD_W * WORLD_H);
       SDL_UpdateWindowSurface(sdl->win);
       SDL_Delay(1000 / GENPERSEC);
     } else {
@@ -171,9 +200,15 @@ clean:
     SDL_DestroyWindow(sdl->win);
     SDL_Quit();
   }
+
   free(sdl);
-  // TODO: free cells & cache IF lv loaded flags is up (avoid double free)
-  free(lv);
+
+  if (lv_loaded_flag) {
+    free(lv->cells);
+    free(lv->cells_cache);
+    free(lv);
+  }
+
   fprintf(stdout, "[loop] Closing...\n");
   return err;
 }
