@@ -1,6 +1,5 @@
 # Life
 
-Still in progress and non-functional.
 This small project is an attempt to emulate the [Conway's Game of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life) in C, using [SDL2](https://wiki.libsdl.org/SDL2/FrontPage) for visualization.
 
 ## Compile
@@ -27,4 +26,11 @@ user@os:~/ ./build/life <map_width> <map_height> <gen_per_sec>
 
 The order matters, but if one the parameters is missing, the missing ones will be defaulted.
 
-**Since it's not complete, some weird behavior must be expected.**
+Currently supports some functionalities:
+- pressing `g` allows you to print out the current generation
+- pressing `SPACE` allows you to pause the game, to observe the grid
+
+Future improvements:
+- On click on the grid, using the mouse position, will be able to kill or give life to a specific cell to toy with patterns
+- Better window management for UX, e.g. resizing the window to see the whole world evolve
+- Color manipulation ?
