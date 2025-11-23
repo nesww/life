@@ -6,6 +6,7 @@
 
 static uint8_t err = 0x0;
 static uint8_t lv_loaded_flag = 0x0;
+static long long gen = 0;
 
 struct SDL_vars *init_sdl() {
   if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
@@ -123,6 +124,9 @@ int main(int argc, char **argv) {
           fprintf(stdout, "[loop] Life game will %s\n",
                   start_life_flag ? "resume/start" : "stop");
         }
+        if (event.key.keysym.sym == SDLK_g) {
+          fprintf(stdout, "[info] Generation: %lld\n", gen);
+        }
         break;
       }
         //
@@ -182,6 +186,7 @@ int main(int argc, char **argv) {
           ++row;
       }
       memcpy(lv->cells_cache, lv->cells, WORLD_W * WORLD_H);
+      ++gen;
       SDL_UpdateWindowSurface(sdl->win);
       SDL_Delay(1000 / GENPERSEC);
     } else {
